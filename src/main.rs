@@ -14,7 +14,7 @@ use std::io::BufRead;
 
 #[tokio::main]
 async fn main() {
-    // Set up the command-line argument parser with subcommands
+    // Set up the command-line argument stuff
     let matches = Command::new("hydropkg")
         .version("1.0")
         .author("hydrophobis")
@@ -51,10 +51,10 @@ async fn main() {
         )
         .get_matches();
 
-    // Handle the subcommands and their arguments
+    // Handle the subcommands and their args
     if let Some(matches) = matches.subcommand_matches("install") {
         if let Some(package_name) = matches.get_one::<String>("package") {
-            // Call the function to download and extract the package
+            // Download and extract, if success add it to install list
             match download_and_extract_package(package_name).await {
                 Ok(()) => {
                     println!("Package '{}' downloaded and extracted successfully!", package_name);
@@ -93,7 +93,6 @@ async fn main() {
     }
 }
 
-// Function to download and extract the package
 async fn download_and_extract_package(package_name: &str) -> Result<(), Box<dyn std::error::Error>> {
     // Define the mirror base URL for Arch Linux
     let mirror = "https://mirror.rackspace.com/archlinux/core/os/x86_64/";
@@ -123,20 +122,18 @@ async fn download_and_extract_package(package_name: &str) -> Result<(), Box<dyn 
 
     let tarball = response.bytes().await?;
 
-    // Use zstd decoder for .pkg.tar.zst files
+    // Use zstd decoder for the .pkg.tar.zst file
     let decoder = Decoder::new(&tarball[..])?;
     let mut archive = Archive::new(decoder);
 
     // Define the target directory where the package should be unpacked
-    // Example: Use the root directory or any other custom directory
-    let out_path = Path::new("/desired/unpack/path"); // Replace with desired unpack path
+    let out_path = Path::new("/bin/"); // Replace with desired unpack path
     
-    // Ensure the directory exists before unpacking
     if !out_path.exists() {
         create_dir_all(out_path)?;
     }
 
-    // Extract the package contents to the specified directory
+    // Extract the package contents to the directory
     match archive.unpack(out_path) {
         Ok(_) => Ok(()),
         Err(e) => Err(format!("Failed to unpack archive: {}", e).into()),
@@ -144,15 +141,14 @@ async fn download_and_extract_package(package_name: &str) -> Result<(), Box<dyn 
 }
 
 
-// Function to search for packages in the mirror directory
+// Function to search for packages in the mirror site
 async fn search_package(search_query: &str) -> Result<HashSet<String>, Box<dyn std::error::Error>> {
     // Define the mirror base URL for Arch Linux
     let mirror = "https://mirror.rackspace.com/archlinux/core/os/x86_64/";
 
     let client = Client::new();
     let response = client.get(mirror).send().await?;
-
-    // Check if the response is successful
+    
     if !response.status().is_success() {
         return Err(format!("Failed to fetch package list: {}", response.status()).into());
     }
@@ -178,7 +174,7 @@ async fn search_package(search_query: &str) -> Result<HashSet<String>, Box<dyn s
     Ok(result)
 }
 
-// Function to add the installed package to the list
+// Function to add the installed package to installed list
 fn add_installed_package(package_name: &str) -> io::Result<()> {
     let home = home_dir().unwrap();
     let config_dir = home.join(".hydropkg");
@@ -201,7 +197,7 @@ async fn remove_package(package_name: &str) -> Result<(), Box<dyn std::error::Er
     let config_dir = home.join(".hydropkg");
     let installed_file = config_dir.join("installed.txt");
 
-    // Read the installed packages
+    // Read the packages
     let installed_packages: Vec<String> = std::fs::read_to_string(&installed_file)?
         .lines()
         .map(|line| line.to_string())
@@ -224,10 +220,10 @@ async fn remove_package(package_name: &str) -> Result<(), Box<dyn std::error::Er
         writeln!(file, "{}", package)?;
     }
 
-    // Delete the package binary (assuming it's located in the current directory)
+    // Delete the package binary
     let package_binary = Path::new(package_name);
     if package_binary.exists() {
-        remove_file(package_binary)?;
+        remove_file("/" + package_binary)?;
     }
 
     Ok(())
