@@ -1,0 +1,16 @@
+[package]
+name = "hydropkg"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+reqwest = "0.12.12"
+tokio = { version = "1", features = ["full"]}
+flate2 = "1.0"
+zstd = "0.13.2"
+tar = "0.4"
+tokio-util = "0.7.13"
+bytes = "1.0"
+clap = "4.0"
+dirs = "6.0"
+select = "0.6.0"
